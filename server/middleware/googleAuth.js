@@ -11,8 +11,9 @@ const googleAuth = async (req, res, next) => {
     if (!userToken || !(typeof userToken === "string")) {
       throw new Error("Authorization needed");
     }
+    console.log(authorization);
     const response = await axios.get(
-      "https://www.googleapis.com/userinfo/v2/me",
+      `https://www.googleapis.com/userinfo/v2/me`,
       {
         headers: { Authorization: authorization },
       }
@@ -24,13 +25,14 @@ const googleAuth = async (req, res, next) => {
     if (!userData.verified_email) {
       throw new Error("Please verify your email.");
     }
-    const user = await User.findOne({ email: userData.email, active: true });
+    const user = await User.findOne({ email: userData.email, isActive: true });
     if (!user) {
       throw new Error("Please create an account.");
     }
     req.user = user;
     next();
   } catch (error) {
+    console.log("ERROR ", error);
     res.status(404).send({ success: false, message: error.message });
   }
 };

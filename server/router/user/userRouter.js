@@ -10,6 +10,8 @@ import { sendMail } from "../../helpers/sendGrid.js";
 import { checkOtp } from "../../helpers/helpers.js";
 import auth from "../../middleware/auth.js";
 import googleAuth from "../../middleware/googleAuth.js";
+import { Expo } from "expo-server-sdk";
+
 const router = express.Router();
 
 router.post(
@@ -145,6 +147,24 @@ router.post("/user/logAllOut", auth, async (req, res) => {
     user.tokens = [];
     await user.save();
     res.send({ success: true, message: "Logged out from all devices." });
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+
+router.post("/user/linkToken", auth, async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) throw new Error("Please send token in body");
+    if (!Expo.isExpoPushToken(token)) throw new Error("invalid expo token");
+    const user = req.user;
+    const expoTokens = user.expoTokens;
+    if (!expoTokens.includes(token)) {
+      user.expoTokens.push(token);
+      await user.save();
+    } else {
+      throw new Error("token already linked");
+    }
   } catch (error) {
     res.status(500).send({ success: false, message: error.message });
   }

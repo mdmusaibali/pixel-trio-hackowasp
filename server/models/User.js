@@ -35,6 +35,17 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       required: true,
     },
+    expoTokens: [{ type: String }],
+    roles: {
+      type: [
+        {
+          type: String,
+          enum: ["admin", "user", "super_admin"],
+          required: true,
+        },
+      ],
+      default: ["user"],
+    },
   },
   {
     timestamps: true,
@@ -82,6 +93,24 @@ userSchema.statics.findByCredentials = async function (email, password) {
   const user = await User.findOne({
     email: email,
     isActive: true,
+  });
+  if (!user) {
+    throw new Error("Username/Email does not exist.");
+  }
+  const isMatch = await crypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new Error("Incorrect credentials!");
+  }
+  return user;
+};
+
+userSchema.statics.findAdminByCredentials = async function (email, password) {
+  const user = await User.findOne({
+    email: email,
+    isActive: true,
+    roles: {
+      $in: "admin",
+    },
   });
   if (!user) {
     throw new Error("Username/Email does not exist.");
